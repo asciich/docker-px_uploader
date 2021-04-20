@@ -18,3 +18,5 @@ RUN cd / && \
 
 RUN cp -v /PX4Firmware/Tools/px_uploader.py /usr/bin/px_uploader && \
     chmod +x+x+x /usr/bin/px_uploader
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
