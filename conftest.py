@@ -4,14 +4,15 @@ import docker
 import pytest
 
 
-class DockerContainerError(Exception):
+class DockerContainerError(AssertionError):
     pass
 
 
 class DockerContainerExecError(DockerContainerError):
     pass
 
-class DockerContainerFile():
+
+class DockerContainerFile(object):
 
     def __init__(self, docker_container, path):
         self._docker_container = docker_container
@@ -49,7 +50,8 @@ class DockerContainerFile():
         except DockerContainerExecError as e:
             return False
 
-class DockerContainerImage():
+
+class DockerContainerImage(object):
 
     def __init__(self, container_image):
         self._container_image = container_image
@@ -66,7 +68,8 @@ class DockerContainerImage():
         tag_name = tag_name.split(':')[1]
         return tag_name
 
-class DockerContainer():
+
+class DockerContainer(object):
 
     def __init__(self, container_image):
         self._image = container_image
@@ -74,7 +77,7 @@ class DockerContainer():
         self._container = None
 
     def check_output(self, command):
-        ret =  self._container.exec_run(command)
+        ret = self._container.exec_run(command)
         if ret.exit_code != 0:
             raise DockerContainerExecError(ret.output)
         return ret.output
@@ -129,6 +132,17 @@ class DockerContainer():
 
     def run(self):
         self._container = self._client.containers.run(self._image, self.default_command, detach=True)
+
+    def run_expect(self, command, expected):
+        if not isinstance(expected, list):
+            expected = [expected]
+        expected = [int(e) for e in expected]
+        ret = self._container.exec_run(command)
+        exit_code = ret.exit_code
+        if ret.exit_code not in expected:
+            raise DockerContainerExecError(
+                'Command "{}" exit code {}, expected exit code(s): {}'.format(command, exit_code, expected))
+        return True
 
 
 @pytest.fixture(scope='module')
